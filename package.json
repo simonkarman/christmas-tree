@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "postinstall": "(npm run install-all && npm run link-all)",
-    "install-all": "npm --prefix system install && npm --prefix server install && npm --prefix client install",
-    "link-all": "(cd server && npm link ../system) && (cd client && npm link ../system)",
+    "postinstall": "npm --prefix system install && npm --prefix server install && npm --prefix client install",
     "dev": "npm-run-all --parallel dev:*",
     "dev:system": "npm run --prefix system dev",
     "dev:server": "npm run --prefix server dev",
