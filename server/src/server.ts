@@ -20,11 +20,14 @@ export const setup = (server: Server, dispatchMessage: (dispatcher: string, mess
     dispatchMessage(ROOT_DISPATCHER, leaver(username));
   });
 
-  let tickCount = 0;
+  let time = 0;
   setInterval(() => {
     if (server.getUsers().filter((u) => u.isLinked).length > 0) {
-      tickCount += 1;
-      dispatchMessage(ROOT_DISPATCHER, tick(tickCount));
+      time += 1;
+      dispatchMessage(ROOT_DISPATCHER, tick({
+        time,
+        connectedPlayers: server.getUsers().map(u => u.username),
+      }));
     }
   }, 1000);
 };

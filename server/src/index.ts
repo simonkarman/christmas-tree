@@ -4,10 +4,17 @@ import * as fs from 'fs';
 import { z } from 'zod';
 import { system } from 'system';
 import { BATCH_SIZE, HISTORY_FILE_NAME, PORT, setup } from './server';
+import { enableUnlinkedKicker } from './unlinked-kicker';
 
 // Implementation
-const props: Props = { /* configure here */ };
+const props: Props = {
+  isValidUsername: (username: string) => {
+    const usernameRegex = /^[a-z0-9_\-.]{3,32}$/;
+    return usernameRegex.test(username);
+  },
+};
 const server = createServer(props);
+enableUnlinkedKicker(server, { inactivitySeconds: 20 });
 
 type SysMessagePayload = {
   dispatcher: string,

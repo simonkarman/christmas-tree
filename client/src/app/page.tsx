@@ -2,7 +2,7 @@
 import { KrmxWithSystemProvider, useSystem } from '@/provider/krmx-with-system-provider';
 import { useKrmx } from '@krmx/client';
 import { useState } from 'react';
-import { isPickable, pick, ready } from 'system';
+import { isPickable, pick, ready, SPECTATOR } from 'system';
 
 export default function Page() {
   // eslint-disable-next-line no-process-env
@@ -97,7 +97,7 @@ function KrmxLoginForm() {
         </div>
         <ul className='flex gap-4 text-sm md:text-base pb-0.5 w-full justify-left border-b border-gray-50 dark:border-gray-700 flex-wrap'>
           {Object.entries(users)
-            .filter(([username]) => state.phase === 'lobby' || state.players.includes(username))
+            .filter(([username]) => username !== SPECTATOR && (state.phase === 'lobby' || state.players.includes(username)))
             .map(([otherUsername, { isLinked }]) => (
               <li
                 key={otherUsername}
@@ -155,12 +155,13 @@ function Application() {
               </strong>
               {' '}to ready up!
             </p>)
-            : <p>Starting in {state.starting - state.tick}...</p>
+            : <p>Starting in {state.starting - state.time}...</p>
           }
         </div>)}
       {state.phase === 'playing' && <>
         <div className='px-6 py-2 space-y-3 sm:space-y-4 sm:px-8 sm:py-4 font-bold text-center'>
           {state.spectators.includes(username) && 'Welcome. You are spectating!' }
+          {state.turn === username && 'Your turn! Pick a block!'}
         </div>
         <div className='w-full mb-4 flex flex-col gap-1'>
           {state.tree.map((slice, y) => {
@@ -220,22 +221,23 @@ function Application() {
               return <li className='flex gap-2 items-baseline pb-2'>
                 <span className='text-xs'>{i + 1}.</span>
                 <span className={classNames} >
-                  {name[0].toUpperCase() + name.slice(1)} - {state.scores[name]} points
+                  {name[0].toUpperCase() + name.slice(1)} - {state.scores[name] < 0 ? 'lost' : `${state.scores[name]} points`}
                 </span>
               </li>;
             })}
           </ul>
+          <p className="text-gray-300 dark:text-gray-600">Restarting in {state.ending + 1} seconds...</p>
         </div>
       </>}
     </div>
-    {state.spectators.length > 0 &&
+    {state.spectators.filter(n => n !== SPECTATOR).length > 0 &&
       <div className='flex w-full sm:max-w-md justify-center mb-4'>
         <ul
-          className="flex flex-wrap gap-2 items-center border-b border-dashed px-1
+          className="flex flex-wrap gap-2 items-center px-1
                    border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300"
         >
           <li className="tracking-tighter text-xs pr-2 text-gray-400 dark:text-gray-500">spectators</li>
-          {state.spectators.map((spectator, i) => <>
+          {state.spectators.filter(n => n !== SPECTATOR).map((spectator, i) => <>
             {i !== 0 ? <li className='text-xs text-gray-300 dark:text-gray-700'>/</li> : undefined}
             <li className='text-sm'>
               {spectator[0].toUpperCase() + spectator.slice(1)}

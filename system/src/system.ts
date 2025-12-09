@@ -1,20 +1,38 @@
 import { z } from 'zod';
 import { System } from './utils/system';
+
 export const ROOT_DISPATCHER = '<ROOT_DISPATCHER>';
+export const SPECTATOR = 'spectator';
 
 export type Phase = 'lobby' | 'playing' | 'finished';
 export type Tree = ((number | '🎁' | undefined)[])[];
-export const system = new System({
-  tick: 0,
 
-  phase: 'lobby' as Phase,
+type State = {
+  time: number;
+
+  phase: Phase;
+  starting: number;
+  ending: number;
+  lobby: { [name: string]: { isReady: boolean } };
+  spectators: string[];
+
+  players: string[];
+  scores: { [name: string]: number };
+  turn: undefined | string;
+  tree: Tree;
+}
+const initialState = (): State => ({
+  time: 0,
+
+  phase: 'lobby',
   starting: -1,
-  lobby: {} as { [name: string]: { isReady: boolean } },
-  spectators: [] as string[],
+  ending: 20,
+  lobby: {},
+  spectators: [],
 
-  players: [] as string[],
-  scores: {} as { [name: string]: number },
-  turn: undefined as (undefined | string),
+  players: [],
+  scores: {},
+  turn: undefined,
   tree: [
     [1],
     [2, '🎁'],
@@ -33,6 +51,7 @@ export const system = new System({
     [1, 3, 4, 1, '🎁', 1, 4, 5, 2, 4, 1, 3, 1, 2, 3],
   ] as Tree,
 });
+export const system = new System(initialState());
 
 export const isPickable = (tree: Tree, x: number, y: number) => {
   const leftTop = x === 0 || tree[y - 1][x - 1] === undefined;
@@ -40,28 +59,47 @@ export const isPickable = (tree: Tree, x: number, y: number) => {
   return y === 0 || (rightTop && leftTop);
 };
 
-export const tick = system.when('tick', z.number().positive().int(), (state, dispatcher, payload) => {
-  if (dispatcher !== ROOT_DISPATCHER) {
-    return;
-  }
-  state.tick = payload;
-  if (state.phase === 'lobby' && state.starting > 0 && state.tick >= state.starting) {
-    state.phase = 'playing';
-    state.players = Object.keys(state.lobby);
-    state.scores = Object.fromEntries(state.players.map((player) => [player, 0]));
-    state.turn = state.players[0];
-    console.info('[INFO] playing with', state.players);
-  }
-});
+export const tick = system.when(
+  'tick',
+  z.object({ time: z.number().positive().int(), connectedPlayers: z.string().array() }),
+  (state, dispatcher, payload) => {
+    if (dispatcher !== ROOT_DISPATCHER) {
+      return;
+    }
+    if (state.ending <= 0) {
+      return {
+        ...initialState(),
+        spectators: payload.connectedPlayers.filter(u => u === SPECTATOR),
+        lobby: Object.fromEntries(payload.connectedPlayers.filter(u => u !== SPECTATOR).map((username) => [username, { isReady: false }])),
+      };
+    }
+
+    state.time = payload.time;
+    if (state.phase === 'lobby' && state.starting > 0 && state.time >= state.starting) {
+      state.phase = 'playing';
+      state.players = Object.keys(state.lobby);
+      state.scores = Object.fromEntries(state.players.map((player) => [player, 0]));
+      state.turn = state.players[0];
+      console.info('[INFO] playing with', state.players);
+    }
+    if (state.phase === 'finished') {
+      state.ending -= 1;
+    }
+  },
+);
 
 export const joiner = system.when('joiner', z.string().min(3), (state, dispatcher, payload) => {
   if (dispatcher !== ROOT_DISPATCHER) {
     return;
   }
   if (state.phase === 'lobby') {
-    state.lobby[payload] = { isReady: false };
-    Object.keys(state.lobby).forEach((username) => state.lobby[username].isReady = false);
-    state.starting = -1;
+    if (payload === SPECTATOR) {
+      state.spectators.push(payload);
+    } else {
+      state.lobby[payload] = { isReady: false };
+      Object.keys(state.lobby).forEach((username) => state.lobby[username].isReady = false);
+      state.starting = -1;
+    }
   } else if (state.phase === 'playing' && state.players.includes(payload)) {
     // do nothing...
   } else {
@@ -78,20 +116,34 @@ export const leaver = system.when('leaver', z.string().min(3), (state, dispatche
     Object.keys(state.lobby).forEach((username) => state.lobby[username].isReady = false);
     state.starting = -1;
   } else {
+    // Handle a spectator leaving
     const spectator = state.spectators.indexOf(payload);
     if (spectator >= 0) {
       state.spectators.splice(spectator, 1);
+    }
+
+    // Handle an active player leaving during the game
+    if (state.phase === 'playing' && state.players.includes(payload)) {
+      state.players = state.players.filter((player) => player !== payload);
+      state.scores[payload] = -1;
+      if (state.turn === payload) {
+        state.turn = state.players.length > 0 ? state.players[0] : undefined;
+      }
+      if (state.players.length === 0 && state.phase === 'playing') {
+        console.info('[INFO] all players left, finishing game');
+        state.phase = 'finished';
+      }
     }
   }
 });
 
 export const ready = system.when('ready', z.boolean(), (state, dispatcher, payload) => {
-  if (state.phase !== 'lobby') {
+  if (state.phase !== 'lobby' || dispatcher === SPECTATOR) {
     return;
   }
   state.lobby[dispatcher].isReady = payload;
   if (Object.keys(state.lobby).every((username) => state.lobby[username].isReady)) {
-    state.starting = state.tick + 5;
+    state.starting = state.time + 5;
   } else {
     state.starting = -1;
   }
