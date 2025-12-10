@@ -7,7 +7,7 @@ import { isPickable, pick, ready, SPECTATOR } from 'system';
 export default function Page() {
   // eslint-disable-next-line no-process-env
   const krmxUrl = process.env.NEXT_PUBLIC_KRMX_URL || 'localhost';
-  const [serverUrl] = useState(`ws://${krmxUrl}:8082`);
+  const [serverUrl] = useState(`ws://${krmxUrl}:8082/krmx?version=1.0.0`);
   return (
     <KrmxWithSystemProvider serverUrl={serverUrl}>
       <KrmxLoginForm />

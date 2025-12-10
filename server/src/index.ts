@@ -1,3 +1,5 @@
+import { createServer as createHttpServer } from 'http';
+import express from 'express';
 import { createServer, Message, Props } from '@krmx/server';
 import { createHash } from 'crypto';
 import * as fs from 'fs';
@@ -6,8 +8,25 @@ import { system } from 'system';
 import { BATCH_SIZE, HISTORY_FILE_NAME, PORT, setup } from './server';
 import { enableUnlinkedKicker } from './unlinked-kicker';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const version = require('../package.json').version;
+
+// Setup express app for health checks and basic info
+const app = express();
+const httpServer = createHttpServer(app);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use((req, _, next) => {
+  console.debug(`[debug] [http] ${req.ip} ${req.method} ${req.path}`);
+  next();
+});
+app.get('/', (_, res) => {
+  res.send({ status: 'OK', version });
+});
+
 // Implementation
 const props: Props = {
+  http: { server: httpServer, path: 'krmx', queryParams: { 'version': version } },
   isValidUsername: (username: string) => {
     const usernameRegex = /^[a-z0-9_\-.]{3,32}$/;
     return usernameRegex.test(username);

@@ -13,6 +13,7 @@
   "author": "Simon Karman",
   "license": "ISC",
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.19.26",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
@@ -27,6 +28,7 @@
   },
   "dependencies": {
     "@krmx/server": "^0.2.4",
+    "express": "^5.2.1",
     "system": "file:/../system",
     "zod": "^3.25.76"
   }
