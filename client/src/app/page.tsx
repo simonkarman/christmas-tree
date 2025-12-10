@@ -161,7 +161,7 @@ function Application() {
       {state.phase === 'playing' && <>
         <div className='px-6 py-2 space-y-3 sm:space-y-4 sm:px-8 sm:py-4 font-bold text-center'>
           {state.spectators.includes(username) && 'Welcome. You are spectating!' }
-          {state.turn === username && 'Your turn! Pick a block!'}
+          {state.turn === username ? 'Your turn! Pick a block!' : 'Waiting for your turn...'}
         </div>
         <div className='w-full mb-4 flex flex-col gap-1'>
           {state.tree.map((slice, y) => {
