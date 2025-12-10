@@ -26,9 +26,9 @@ export default function RootLayout({
         </div>
         <footer className='py-1 px-3 text-center md:mb-2 md:left-2 text-gray-500 dark:text-gray-400 text-xs md:text-sm'>
           <span className=''>Build with</span>{' '}
-          <a href='https://krmx.dev' className='font-semibold text-gray-900 dark:text-gray-50'>Krmx</a>
+          <a target='_blank' href='https://krmx.dev' className='font-semibold text-gray-900 dark:text-gray-50'>Krmx</a>
           {' '}by{' '}
-          <a href='https://www.simonkarman.nl' className='text-blue-800 dark:text-blue-200'>simonkarman</a>
+          <a target='_blank' href='https://www.simonkarman.nl' className='text-blue-800 dark:text-blue-200'>simonkarman</a>
         </footer>
       </body>
     </html>

@@ -130,7 +130,6 @@ export const leaver = system.when('leaver', z.string().min(3), (state, dispatche
         state.turn = state.players.length > 0 ? state.players[0] : undefined;
       }
       if (state.players.length === 0 && state.phase === 'playing') {
-        console.info('[INFO] all players left, finishing game');
         state.phase = 'finished';
       }
     }

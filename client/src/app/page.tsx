@@ -125,7 +125,7 @@ function Application() {
         <div className="px-6 py-2 space-y-3 sm:space-y-4 sm:px-8 sm:py-4">
           <div className="flex justify-between">
             <h2 className="font-bold text-xl">Lobby</h2>
-            {username in state.lobby && state.lobby[username].isReady
+            {username !== SPECTATOR && (username in state.lobby && state.lobby[username].isReady
               ? <button
                 className="text-white bg-orange-600 hover:bg-orange-700 focus:ring-4 focus:outline-none focus:ring-orange-300 font-medium
                   rounded-lg text-sm px-5 py-1 text-center dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-800"
@@ -140,20 +140,25 @@ function Application() {
               >
                 Ready
               </button>
-            }
+            )}
           </div>
           {state.starting === -1
             ? (<p>
               Waiting for{' '}
-              <strong className="font-bold">
-                {Object
-                  .keys(state.lobby)
-                  .filter(n => !state.lobby[n].isReady)
-                  .map(username => username[0].toUpperCase() + username.slice(1))
-                  .join(' and ')
-                }
-              </strong>
-              {' '}to ready up!
+              {Object.keys(state.lobby).length === 0
+                ? 'players to join.'
+                : <>
+                  <strong className="font-bold">
+                    {Object
+                      .keys(state.lobby)
+                      .filter(n => !state.lobby[n].isReady)
+                      .map(username => username[0].toUpperCase() + username.slice(1))
+                      .join(' and ')
+                    }
+                  </strong>
+                  {' '}to ready up!
+                </>
+              }
             </p>)
             : <p>Starting in {state.starting - state.time}...</p>
           }
